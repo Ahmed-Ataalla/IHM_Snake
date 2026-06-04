@@ -372,10 +372,8 @@ void  target_pos(){
 
     for (int i = 0; i < active_tail; i++){
 
-      lvglLock();
-      int tx = lv_obj_get_x_aligned(tail_cercle[i]);
-      int ty = lv_obj_get_y_aligned(tail_cercle[i]);
-      lvglUnlock();
+        int tx = memoire_x[i];
+        int ty = memoire_y[i];
 
       int diff_x = abs(tx - target_x);
       int diff_y = abs(ty - target_y);
@@ -384,7 +382,7 @@ void  target_pos(){
       if(diff_y < 0) diff_y = -diff_y;
       
       if (diff_x < 40 && diff_y < 40){
-        valid_pos = true;
+        valid_pos = false;
         break;
       }
     }
