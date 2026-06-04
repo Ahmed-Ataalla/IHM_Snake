@@ -27,17 +27,19 @@ int vit = 5;
   int y_max=120;
   int y_min=-120;
 
-  int memoire_size = 120;
-  int memoire_x[120] = {0};
-  int memoire_y[120] = {0};
+  int memoire_size = 400;
+  int memoire_x[400] = {0};
+  int memoire_y[400] = {0};
 
   int target_x; int target_y;
 
-
-int random_pos (int min_val,int max_val){
+void  target_pos();
+int random_pos (int min_val,int max_val,int grid_size){
   int val;
+  min_val = min_val/grid_size;
+  max_val = max_val/grid_size;
   val = min_val +(rand()%(max_val-min_val+1));
-  return val;
+  return val*grid_size;
 }
 
 static void event_handler(lv_event_t *e)
@@ -146,12 +148,20 @@ void myTask(void *pvParameters)
   // Lecture du nombre de ticks quand la tâche débute
   xLastWakeTime = xTaskGetTickCount();
 
-  target_x = random_pos(-220,200);
-  target_y = random_pos(-100,100);
+  target_pos();
 
   lvglLock();
   lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
+  for (int i = 0; i < Max_cercle;i++)
+  {
+    lv_obj_clear_flag(tail_cercle[i],LV_OBJ_FLAG_HIDDEN);
+  }
   lvglUnlock();
+
+  for(int i = 0; i < memoire_size; i++){
+    memoire_x[i] = x_offset;
+    memoire_y[i] = y_offset;
+  }
 
   while (1)
   {
@@ -239,18 +249,22 @@ void myTask(void *pvParameters)
     memoire_x[0] = x_offset;
     memoire_y[0] = y_offset;
 
-    int diff_x = x_offset - target_x;
-    int diff_y = y_offset - target_y;
+    int diff_x = abs(x_offset - target_x);
+    int diff_y = abs(y_offset - target_y);
 
     if(diff_x < 0) diff_x = -diff_x;
     if(diff_y < 0) diff_y = -diff_y;
 
     if (diff_x < 20 && diff_y < 20){
         if (tail_length < Max_cercle){
+          lvglLock();
+          lv_obj_clear_flag(tail_cercle[tail_length],LV_OBJ_FLAG_HIDDEN);
+          lv_obj_set_style_bg_opa(tail_cercle[tail_length],LV_OPA_COVER,LV_STATE_DEFAULT);
+          lvglUnlock();
+          
           tail_length++;}
 
-      target_x = random_pos(-220,200);
-      target_y = random_pos(-100,100);
+      target_pos();
 
       lvglLock();
       lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
@@ -262,7 +276,7 @@ void myTask(void *pvParameters)
       lvglLock();
       lv_obj_align(cercle, LV_ALIGN_CENTER, x_offset, y_offset);
       lvglUnlock();
-
+ 
       int active_tail;
       if(tail_length > Max_cercle){
         active_tail = Max_cercle;
@@ -273,19 +287,15 @@ void myTask(void *pvParameters)
 
       int memoire_index = 0;
       for (int i = 0; i < Max_cercle; i++){
-        int spacing = 5 - (i/2);
-        if (spacing < 2) spacing = 2;
-        memoire_index += spacing;
+        int spacing = 6 - (i/4);
+        if (spacing < 3) spacing = 3;
+          memoire_index += spacing;
+        
+        if(memoire_index >= memoire_size){
+          memoire_index = memoire_size - 1;
+        }
 
         if (i < active_tail) {
-
-          lvglLock();
-          lv_obj_clear_flag(tail_cercle[i],LV_OBJ_FLAG_HIDDEN);
-          lvglUnlock();
-
-          // memoire_index = (i+1) * spacing;
-          if(memoire_index >= memoire_size)
-          memoire_index = memoire_size - 1;
 
           int tx = memoire_x[memoire_index];
           int ty = memoire_y[memoire_index];
@@ -294,9 +304,13 @@ void myTask(void *pvParameters)
           if (x_offset == (x_max-grid) && tx < -100) continue;
           if (y_offset == y_min && ty > 80) continue;
           if (y_offset == y_max && ty < -80) continue;
+          // if(abs(x_offset-tx)>200) continue;
+          // if(abs(y_offset-ty)>200) continue;
 
           // lv_obj_set_style_bg_opa(tail_cercle[i],LV_OPA_COVER,LV_STATE_DEFAULT);
           lvglLock();
+          lv_obj_clear_flag(tail_cercle[i],LV_OBJ_FLAG_HIDDEN);
+          lv_obj_set_style_bg_opa(tail_cercle[i],LV_OPA_COVER,LV_STATE_DEFAULT);
           lv_obj_align (tail_cercle[i],LV_ALIGN_CENTER, tx, ty);
           lvglUnlock();
         }
@@ -334,3 +348,45 @@ int main(void)
 }
 
 #endif
+void  target_pos(){
+  bool valid_pos = false;
+
+  while(!valid_pos){
+    target_x = random_pos(-220,200,grid);
+    target_y = random_pos(-100,100,grid);
+
+    valid_pos = true;
+    
+    if (target_x == x_offset_2 && target_y == y_offset_2){
+      valid_pos = false;
+      continue;
+    }
+
+     int active_tail;
+      if(tail_length > Max_cercle){
+        active_tail = Max_cercle;
+      }
+      else {
+        active_tail = tail_length;
+      }
+
+    for (int i = 0; i < active_tail; i++){
+
+      lvglLock();
+      int tx = lv_obj_get_x_aligned(tail_cercle[i]);
+      int ty = lv_obj_get_y_aligned(tail_cercle[i]);
+      lvglUnlock();
+
+      int diff_x = abs(tx - target_x);
+      int diff_y = abs(ty - target_y);
+
+      if(diff_x < 0) diff_x = -diff_x;
+      if(diff_y < 0) diff_y = -diff_y;
+      
+      if (diff_x < 40 && diff_y < 40){
+        valid_pos = true;
+        break;
+      }
+    }
+  }
+}
