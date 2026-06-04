@@ -34,6 +34,7 @@ int memoire_tete = 0;
   int memoire_y[400] = {0};
 
   int target_x; int target_y;
+  bool target_collect = false;
 
 void  target_pos();
 void reset_game();
@@ -251,32 +252,38 @@ void myTask(void *pvParameters)
     memoire_x[memoire_tete] = x_offset;
     memoire_y[memoire_tete] = y_offset;
     
-    if (dir != 0){
+    if (dir != 0 && !target_collect){
       int memoire_index = 0;
-      for (int i = 0; i < tail_length - 1; i++){
+      for (int i = 3; i < tail_length - 1; i++){
         int spacing = 6 - (i/4);
         if (spacing < 3) spacing = 3;
           memoire_index += spacing;
         if(memoire_index >= memoire_size)
           memoire_index = memoire_size - 1;
         
-       int tx =  memoire_x[(memoire_tete + memoire_index) % memoire_size];
+       int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
        int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
+
+       if (tx == 0 && ty == 0) continue;
+
        if (abs(x_offset - tx) < 20 && abs(y_offset - ty) <20)
        {
         reset_game();
+        xLastWakeTime = xTaskGetTickCount();
         break;
        }
       }
     }
-    
+    target_collect = false;
+
     int diff_x = abs(x_offset - target_x);
     int diff_y = abs(y_offset - target_y);
 
     if(diff_x < 0) diff_x = -diff_x;
     if(diff_y < 0) diff_y = -diff_y;
 
-    if (diff_x < 20 && diff_y < 20){
+    if (diff_x < 20 && diff_y < 20 && dir != 0){
+        target_collect = true;
         if (tail_length < Max_cercle){
           lvglLock();
           lv_obj_clear_flag(tail_cercle[tail_length],LV_OBJ_FLAG_HIDDEN);
@@ -405,6 +412,7 @@ void reset_game(){
   dir = 0;
   dir_2 = 0;
   tail_length = 3;
+  memoire_tete = 0;
 
   for(int i = 0; i < memoire_size; i++){
     memoire_x[i] = x_offset;
@@ -415,6 +423,7 @@ void reset_game(){
 
   lvglLock();
   lv_obj_align(cercle, LV_ALIGN_CENTER, x_offset, y_offset);
+  lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
   
   for (int i = 0; i < Max_cercle;i++)
   {
