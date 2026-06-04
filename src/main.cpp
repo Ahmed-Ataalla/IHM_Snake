@@ -190,34 +190,6 @@ void myTask(void *pvParameters)
     memoire_x[memoire_tete] = x_offset;
     memoire_y[memoire_tete] = y_offset;
 
-    // ✅ 1. collision check first
-    if (dir != 0 && !target_collect){
-      int memoire_index = 0;
-      for (int i = 3; i < tail_length - 1; i++){
-        int spacing = 6 - (i/4);
-        if (spacing < 3) spacing = 3;
-        memoire_index += spacing;
-        if(memoire_index >= memoire_size)
-          memoire_index = memoire_size - 1;
-        
-        int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
-        int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
-        
-        if (tx == 0 && ty == 0) continue;
-
-        if (abs(x_offset - tx) < 20 && abs(y_offset - ty) < 20){
-          printf("Collision detected at (%d, %d) segment %d  at (%d, %d) memoire index %d\n", tx, ty, i, tx, ty, memoire_index);
-          reset_game();
-          xLastWakeTime = xTaskGetTickCount();
-          break;
-        }
-      }
-    }
-
-    // ✅ 2. reset flag after collision check
-    target_collect = false;
-
-    // ✅ 3. target collection last
     int diff_x = abs(x_offset - target_x);
     int diff_y = abs(y_offset - target_y);
 
@@ -315,39 +287,3 @@ void target_pos(){
     }
   }
 }
-
-void reset_game(){
-  x_offset = 0;
-  y_offset = 0;
-  x_offset_2 = 0;
-  y_offset_2 = 0;
-  dir = 0;
-  dir_2 = 0;
-  tail_length = 3;
-  memoire_tete = 0;
-  target_collect = false;
-
-  for(int i = 0; i < memoire_size; i++){
-    memoire_x[i] = 0;
-    memoire_y[i] = 0;
-  }
-
-  target_pos();
-
-  lvglLock();
-  lv_obj_align(cercle, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
-  for (int i = 0; i < Max_cercle; i++){
-    lv_obj_set_style_bg_opa(tail_cercle[i],LV_OPA_0,LV_STATE_DEFAULT);
-  }
-  lvglUnlock();
-}
-
-#else
-
-int main(void)
-{
-  return 0;
-}
-
-#endif
