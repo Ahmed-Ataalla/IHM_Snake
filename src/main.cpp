@@ -13,6 +13,8 @@ int tail_length = 3;
 int grid = 40;
 int vit = 5;
 
+int memoire_tete = 0;
+
   int x_offset = 0;
   int y_offset = 0;
 
@@ -241,13 +243,17 @@ void myTask(void *pvParameters)
     y_offset -= vit;}
 
 
-    for (int i = memoire_size-1; i > 0; i--)
-    {
-      memoire_x[i] = memoire_x[i-1];
-      memoire_y[i] = memoire_y[i-1]; 
-    }
-    memoire_x[0] = x_offset;
-    memoire_y[0] = y_offset;
+    // for (int i = memoire_size-1; i > 0; i--)
+    // {
+    //   memoire_x[i] = memoire_x[i-1];
+    //   memoire_y[i] = memoire_y[i-1]; 
+    // }
+    // memoire_x[0] = x_offset;
+    // memoire_y[0] = y_offset;
+
+    memoire_tete = (memoire_tete - 1 + memoire_size) % memoire_size;
+    memoire_x[memoire_tete] = x_offset;
+    memoire_y[memoire_tete] = y_offset;
 
     int diff_x = abs(x_offset - target_x);
     int diff_y = abs(y_offset - target_y);
@@ -286,6 +292,9 @@ void myTask(void *pvParameters)
       }
 
       int memoire_index = 0;
+      lvglLock();
+      lv_obj_align (cercle,LV_ALIGN_CENTER, x_offset, y_offset);
+
       for (int i = 0; i < Max_cercle; i++){
         int spacing = 6 - (i/4);
         if (spacing < 3) spacing = 3;
@@ -297,8 +306,8 @@ void myTask(void *pvParameters)
 
         if (i < active_tail) {
 
-          int tx = memoire_x[memoire_index];
-          int ty = memoire_y[memoire_index];
+          int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
+          int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
 
           if (x_offset == x_min && tx > 100) continue;
           if (x_offset == (x_max-grid) && tx < -100) continue;
@@ -308,18 +317,17 @@ void myTask(void *pvParameters)
           // if(abs(y_offset-ty)>200) continue;
 
           // lv_obj_set_style_bg_opa(tail_cercle[i],LV_OPA_COVER,LV_STATE_DEFAULT);
-          lvglLock();
+          
           lv_obj_clear_flag(tail_cercle[i],LV_OBJ_FLAG_HIDDEN);
           lv_obj_set_style_bg_opa(tail_cercle[i],LV_OPA_COVER,LV_STATE_DEFAULT);
           lv_obj_align (tail_cercle[i],LV_ALIGN_CENTER, tx, ty);
-          lvglUnlock();
         }
-        else {
-          lvglLock();
+        else {;
           lv_obj_set_style_bg_opa(tail_cercle[i],LV_OPA_0,LV_STATE_DEFAULT);
-          lvglUnlock();
+          
         }
       }
+      lvglUnlock();
     }
 
     // Endort la tâche pendant le temps restant par rapport au réveil,
@@ -369,11 +377,17 @@ void  target_pos(){
       else {
         active_tail = tail_length;
       }
-
+      
+      int memoire_index = 0;
     for (int i = 0; i < active_tail; i++){
-
-        int tx = memoire_x[i];
-        int ty = memoire_y[i];
+        int spacing = 6 - (i/4);
+        if (spacing < 3) spacing = 3;
+          memoire_index += spacing;
+        if(memoire_index >= memoire_size){
+          memoire_index = memoire_size - 1;
+        }
+        int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
+        int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
 
       int diff_x = abs(tx - target_x);
       int diff_y = abs(ty - target_y);
