@@ -36,6 +36,8 @@ int memoire_tete = 0;
   int target_x; int target_y;
   bool target_collect = false;
   int step = 0;
+  int tail_pos_x[Max_cercle] = {0};
+  int tail_pos_y[Max_cercle] = {0};
 
 void  target_pos();
 void reset_game();
@@ -171,6 +173,15 @@ void myTask(void *pvParameters)
       y_offset = y_offset_2;
       dir = dir_2;
 
+      int shift_len = tail_length;
+      if (shift_len > Max_cercle) shift_len = Max_cercle;
+      for(int i = shift_len-1; i > 0; i--){
+        tail_pos_x[i] = tail_pos_x[i-1];
+        tail_pos_y[i] = tail_pos_y[i-1];
+      }
+      tail_pos_x[0] = x_offset;
+      tail_pos_y[0] = y_offset;
+
       if (dir == 1) y_offset_2 -= grid;
       if (dir == 2) y_offset_2 += grid;
       if (dir == 3) x_offset_2 += grid;
@@ -193,22 +204,14 @@ void myTask(void *pvParameters)
     step++;
 
     //  1. collision check first
-    if (dir != 0 && !target_collect){
-      int memoire_index = 0;
-      for (int i = 3; i < tail_length - 1; i++){
-        int spacing = 6 - (i/4);
-        if (spacing < 3) spacing = 3;
-        memoire_index += spacing;
-        if(memoire_index >= memoire_size)
-          memoire_index = memoire_size - 1;
-        
-        int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
-        int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
-        
-        if (tx == 0 && ty == 0) continue;
+    if (dir != 0 && step> memoire_size){
 
-        if (abs(x_offset - tx) <= 20 && abs(y_offset - ty) <= 20){
-          printf("Collision detected at (%d, %d) segment %d  at (%d, %d) memoire index %d\n", tx, ty, i, tx, ty, memoire_index);
+      int active_tail;
+      if(tail_length > Max_cercle) active_tail = Max_cercle;
+      else active_tail = tail_length;
+
+      for (int i = 0; i < active_tail; i++){
+        if (abs(x_offset - tail_pos_x[i]) <= 18 && abs(y_offset - tail_pos_y[i]) <= 18){
           lvglLock();
           reset_game();
           lvglUnlock();
@@ -329,6 +332,7 @@ void reset_game(){
   tail_length = 3;
   memoire_tete = 0;
   target_collect = false;
+  step = 0;
 
   for(int i = 0; i < memoire_size; i++){
     memoire_x[i] = 0;
