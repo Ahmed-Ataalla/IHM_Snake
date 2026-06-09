@@ -10,7 +10,7 @@
 
 int tail_length = 3;
 int grid = 40;
-int vit = 5;
+int vit = 7;
 int memoire_tete = 0;
 
 int x_offset = 0;
@@ -427,6 +427,7 @@ void reset_game()
     lv_obj_set_style_bg_opa(tail_cercle[i], LV_OPA_0, LV_STATE_DEFAULT);
   }
   lvglUnlock();
+  score_update();
 }
 
 void score_update()
