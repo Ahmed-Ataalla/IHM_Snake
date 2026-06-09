@@ -20,7 +20,7 @@ int y_offset_2 = 0;
 
 int dir = 0;
 int dir_2 = 0;
-  
+
 int x_max = 240;
 int x_min = -240;
 int y_max = 120;
@@ -30,15 +30,19 @@ int memoire_size = 400;
 int memoire_x[400] = {0};
 int memoire_y[400] = {0};
 
-int target_x; 
+int target_x;
 int target_y;
 bool target_collect = false;
 int step = 0;
 
+int score = 0;
+
 void target_pos();
 void reset_game();
+void score_update();
 
-int random_pos(int min_val, int max_val, int grid_size){
+int random_pos(int min_val, int max_val, int grid_size)
+{
   int val;
   min_val = min_val / grid_size;
   max_val = max_val / grid_size;
@@ -51,13 +55,14 @@ static void event_handler(lv_event_t *e) {}
 static lv_obj_t *cercle;
 static lv_obj_t *tail_cercle[Max_cercle];
 static lv_obj_t *target;
+static lv_obj_t *score_label;
 
 void testLvgl()
 {
   lv_obj_t *screen = lv_screen_active();
   lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_bg_color(screen, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
-  
+
   cercle = lv_obj_create(screen);
   lv_obj_clear_flag(cercle, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cercle, 40, 40);
@@ -74,22 +79,26 @@ void testLvgl()
     lv_obj_clear_flag(tail_cercle[i], LV_OBJ_FLAG_SCROLLABLE);
 
     int segment_size = 38 - (i / 4);
-    if (segment_size < 12) segment_size = 12;
+    if (segment_size < 12)
+      segment_size = 12;
 
     lv_obj_set_size(tail_cercle[i], segment_size, segment_size);
     lv_obj_set_style_radius(tail_cercle[i], LV_RADIUS_CIRCLE, LV_STATE_DEFAULT);
 
     int pattern = (i / 3) % 3;
-    if (pattern == 0){
+    if (pattern == 0)
+    {
       lv_obj_set_style_bg_color(tail_cercle[i], lv_palette_main(LV_PALETTE_CYAN), LV_STATE_DEFAULT);
     }
-    else if (pattern == 1){
+    else if (pattern == 1)
+    {
       lv_obj_set_style_bg_color(tail_cercle[i], lv_palette_main(LV_PALETTE_BLUE), LV_STATE_DEFAULT);
     }
-    else{
+    else
+    {
       lv_obj_set_style_bg_color(tail_cercle[i], lv_palette_main(LV_PALETTE_INDIGO), LV_STATE_DEFAULT);
     }
-    
+
     lv_obj_set_style_border_width(tail_cercle[i], 0, LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(tail_cercle[i], 0, LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(tail_cercle[i], LV_OPA_COVER, LV_STATE_DEFAULT);
@@ -105,6 +114,11 @@ void testLvgl()
   lv_obj_set_style_border_width(target, 0, LV_STATE_DEFAULT);
   lv_obj_set_style_pad_all(target, 0, LV_STATE_DEFAULT);
   lv_obj_align(target, LV_ALIGN_CENTER, 0, 0);
+
+  score_label = lv_label_create(screen);
+  lv_obj_set_style_text_color(score_label, lv_color_hex(0x000000), LV_STATE_DEFAULT);
+  lv_obj_align(score_label, LV_ALIGN_TOP_RIGHT, -10, 10);
+  score_update();
 }
 
 #ifdef ARDUINO
@@ -139,7 +153,8 @@ void myTask(void *pvParameters)
   }
   lvglUnlock();
 
-  for(int i = 0; i < memoire_size; i++){
+  for (int i = 0; i < memoire_size; i++)
+  {
     memoire_x[i] = 9999;
     memoire_y[i] = 9999;
   }
@@ -155,59 +170,103 @@ void myTask(void *pvParameters)
 
     switch (button_mask)
     {
-      case 1: if(dir != 2) dir_2 = 1; break;
-      case 2: if(dir != 1) dir_2 = 2; break;
-      case 4: if(dir != 4) dir_2 = 3; break;
-      case 8: if(dir != 3) dir_2 = 4; break;
-      default: break;
+    case 1:
+      if (dir != 2)
+        dir_2 = 1;
+      break;
+    case 2:
+      if (dir != 1)
+        dir_2 = 2;
+      break;
+    case 4:
+      if (dir != 4)
+        dir_2 = 3;
+      break;
+    case 8:
+      if (dir != 3)
+        dir_2 = 4;
+      break;
+    default:
+      break;
     }
 
-    if(abs(x_offset - x_offset_2) < vit && abs(y_offset - y_offset_2) < vit)
+    if (abs(x_offset - x_offset_2) < vit && abs(y_offset - y_offset_2) < vit)
     {
       x_offset = x_offset_2;
       y_offset = y_offset_2;
       dir = dir_2;
       step++;
 
-      if (dir == 1) y_offset_2 -= grid;
-      if (dir == 2) y_offset_2 += grid;
-      if (dir == 3) x_offset_2 += grid;
-      if (dir == 4) x_offset_2 -= grid;
+      if (dir == 1)
+        y_offset_2 -= grid;
+      if (dir == 2)
+        y_offset_2 += grid;
+      if (dir == 3)
+        x_offset_2 += grid;
+      if (dir == 4)
+        x_offset_2 -= grid;
 
-      if (x_offset_2 > x_max){ x_offset_2 = x_min; x_offset = x_min; }
-      else if (x_offset_2 < x_min){ x_offset_2 = x_max - grid; x_offset = x_max - grid; }
-      if (y_offset_2 > y_max){ y_offset_2 = y_min; y_offset = y_min; }
-      else if (y_offset_2 < y_min){ y_offset_2 = y_max; y_offset = y_max; }
+      if (x_offset_2 > x_max)
+      {
+        x_offset_2 = x_min;
+        x_offset = x_min;
+      }
+      else if (x_offset_2 < x_min)
+      {
+        x_offset_2 = x_max - grid;
+        x_offset = x_max - grid;
+      }
+      if (y_offset_2 > y_max)
+      {
+        y_offset_2 = y_min;
+        y_offset = y_min;
+      }
+      else if (y_offset_2 < y_min)
+      {
+        y_offset_2 = y_max;
+        y_offset = y_max;
+      }
     }
 
-    if(x_offset < x_offset_2) x_offset += vit;
-    if(x_offset > x_offset_2) x_offset -= vit;
-    if(y_offset < y_offset_2) y_offset += vit;
-    if(y_offset > y_offset_2) y_offset -= vit;
+    if (x_offset < x_offset_2)
+      x_offset += vit;
+    if (x_offset > x_offset_2)
+      x_offset -= vit;
+    if (y_offset < y_offset_2)
+      y_offset += vit;
+    if (y_offset > y_offset_2)
+      y_offset -= vit;
 
     memoire_tete = (memoire_tete - 1 + memoire_size) % memoire_size;
     memoire_x[memoire_tete] = x_offset;
     memoire_y[memoire_tete] = y_offset;
 
     // 1. Fixed Tail Collision Checking (Uses History Tracking Structure)
-    if (dir != 0 && step > 2) {
+    if (dir != 0 && step > 2)
+    {
       int active_tail = (tail_length > Max_cercle) ? Max_cercle : tail_length;
       int memoire_index = 0;
 
       // Start checking loop at segment 4 to avoid head colliding with its neck
-      for (int i = 0; i < active_tail; i++) {
+      for (int i = 0; i < active_tail; i++)
+      {
         int spacing = 6 - (i / 4);
-        if (spacing < 3) spacing = 3;
+        if (spacing < 3)
+          spacing = 3;
         memoire_index += spacing;
-        
-        if (memoire_index >= memoire_size) memoire_index = memoire_size - 1;
 
-        if (i >= 4) { 
+        if (memoire_index >= memoire_size)
+          memoire_index = memoire_size - 1;
+
+        if (i >= 4)
+        {
           int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
           int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
 
-          if (tx != 9999 && ty != 9999) {
-            if (abs(x_offset - tx) <= 18 && abs(y_offset - ty) <= 18) {
+          if (tx != 9999 && ty != 9999)
+          {
+            if (abs(x_offset - tx) <= 18 && abs(y_offset - ty) <= 18)
+            {
               reset_game();
               break;
             }
@@ -223,9 +282,14 @@ void myTask(void *pvParameters)
     int diff_x = abs(x_offset - target_x);
     int diff_y = abs(y_offset - target_y);
 
-    if (diff_x <= 20 && diff_y <= 20 && dir != 0){
+    if (diff_x <= 20 && diff_y <= 20 && dir != 0)
+    {
       target_collect = true;
-      if (tail_length < Max_cercle){
+      
+      score += 10;
+      
+      if (tail_length < Max_cercle)
+      {
         lvglLock();
         lv_obj_clear_flag(tail_cercle[tail_length], LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_style_bg_opa(tail_cercle[tail_length], LV_OPA_COVER, LV_STATE_DEFAULT);
@@ -236,6 +300,7 @@ void myTask(void *pvParameters)
       lvglLock();
       lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
       lvglUnlock();
+      score_update();
     }
 
     // 4. Visual Tail Rendering Update
@@ -243,32 +308,41 @@ void myTask(void *pvParameters)
     {
       int active_tail = (tail_length > Max_cercle) ? Max_cercle : tail_length;
       int memoire_index = 0;
-      
+
       lvglLock();
       lv_obj_align(cercle, LV_ALIGN_CENTER, x_offset, y_offset);
 
       // Changed starting element to 0 so early segments are visual updated properly
-      for (int i = 0; i < Max_cercle; i++){
+      for (int i = 0; i < Max_cercle; i++)
+      {
         int spacing = 6 - (i / 4);
-        if (spacing < 3) spacing = 3;
+        if (spacing < 3)
+          spacing = 3;
         memoire_index += spacing;
-        
-        if(memoire_index >= memoire_size) memoire_index = memoire_size - 1;
 
-        if (i < active_tail) {
+        if (memoire_index >= memoire_size)
+          memoire_index = memoire_size - 1;
+
+        if (i < active_tail)
+        {
           int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
           int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
 
-          if (x_offset == x_min && tx > 100) continue;
-          if (x_offset == (x_max - grid) && tx < -100) continue;
-          if (y_offset == y_min && ty > 80) continue;
-          if (y_offset == y_max && ty < -80) continue;
+          if (x_offset == x_min && tx > 100)
+            continue;
+          if (x_offset == (x_max - grid) && tx < -100)
+            continue;
+          if (y_offset == y_min && ty > 80)
+            continue;
+          if (y_offset == y_max && ty < -80)
+            continue;
 
           lv_obj_clear_flag(tail_cercle[i], LV_OBJ_FLAG_HIDDEN);
           lv_obj_set_style_bg_opa(tail_cercle[i], LV_OPA_COVER, LV_STATE_DEFAULT);
           lv_obj_align(tail_cercle[i], LV_ALIGN_CENTER, tx, ty);
         }
-        else {
+        else
+        {
           lv_obj_set_style_bg_opa(tail_cercle[i], LV_OPA_0, LV_STATE_DEFAULT);
         }
       }
@@ -279,36 +353,43 @@ void myTask(void *pvParameters)
   }
 }
 
-void target_pos(){
+void target_pos()
+{
   bool valid_pos = false;
 
-  while(!valid_pos){
+  while (!valid_pos)
+  {
     target_x = random_pos(-220, 200, grid);
     target_y = random_pos(-100, 100, grid);
 
     valid_pos = true;
-    
-    if (target_x == x_offset && target_y == y_offset){
+
+    if (target_x == x_offset && target_y == y_offset)
+    {
       valid_pos = false;
       continue;
     }
 
     int active_tail = (tail_length > Max_cercle) ? Max_cercle : tail_length;
     int memoire_index = 0;
-    
-    for (int i = 0; i < active_tail; i++){
+
+    for (int i = 0; i < active_tail; i++)
+    {
       int spacing = 6 - (i / 4);
-      if (spacing < 3) spacing = 3;
+      if (spacing < 3)
+        spacing = 3;
       memoire_index += spacing;
-      if(memoire_index >= memoire_size) memoire_index = memoire_size - 1;
+      if (memoire_index >= memoire_size)
+        memoire_index = memoire_size - 1;
 
       int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
       int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
 
       int diff_x = abs(tx - target_x);
       int diff_y = abs(ty - target_y);
-      
-      if (diff_x < 40 && diff_y < 40){
+
+      if (diff_x < 40 && diff_y < 40)
+      {
         valid_pos = false;
         break;
       }
@@ -316,7 +397,8 @@ void target_pos(){
   }
 }
 
-void reset_game(){
+void reset_game()
+{
   x_offset = 0;
   y_offset = 0;
   x_offset_2 = 0;
@@ -327,8 +409,10 @@ void reset_game(){
   memoire_tete = 0;
   target_collect = false;
   step = 0;
+  score = 0;
 
-  for(int i = 0; i < memoire_size; i++){
+  for (int i = 0; i < memoire_size; i++)
+  {
     memoire_x[i] = 9999;
     memoire_y[i] = 9999;
   }
@@ -338,10 +422,21 @@ void reset_game(){
   lvglLock();
   lv_obj_align(cercle, LV_ALIGN_CENTER, 0, 0);
   lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
-  for (int i = 0; i < Max_cercle; i++){
+  for (int i = 0; i < Max_cercle; i++)
+  {
     lv_obj_set_style_bg_opa(tail_cercle[i], LV_OPA_0, LV_STATE_DEFAULT);
   }
   lvglUnlock();
+}
+
+void score_update()
+{
+  if (score_label != NULL)
+  {
+    lvglLock();
+    lv_label_set_text_fmt(score_label, "%d",score);
+    lvglUnlock();
+  }
 }
 
 #else
