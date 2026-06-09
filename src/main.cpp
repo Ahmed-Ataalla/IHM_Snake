@@ -35,9 +35,12 @@ int memoire_tete = 0;
 
   int target_x; int target_y;
   bool target_collect = false;
-  int step = 0;
-  int tail_pos_x[Max_cercle] = {0};
-  int tail_pos_y[Max_cercle] = {0};
+
+
+  int tail_pos_x[Max_cercle];
+  int tail_pos_y[Max_cercle];
+int step = 0;
+
 
 void  target_pos();
 void reset_game();
@@ -145,8 +148,12 @@ void myTask(void *pvParameters)
   lvglUnlock();
 
   for(int i = 0; i < memoire_size; i++){
-    memoire_x[i] = x_offset;
-    memoire_y[i] = y_offset;
+    memoire_x[i] = 9999;
+    memoire_y[i] = 9999;
+  }
+  for (int i = 0; i < Max_cercle; i++){
+    tail_pos_x[i] = 9999;
+    tail_pos_y[i] = 9999;
   }
 
   while (1)
@@ -181,6 +188,7 @@ void myTask(void *pvParameters)
       }
       tail_pos_x[0] = x_offset;
       tail_pos_y[0] = y_offset;
+      step++;
 
       if (dir == 1) y_offset_2 -= grid;
       if (dir == 2) y_offset_2 += grid;
@@ -201,20 +209,18 @@ void myTask(void *pvParameters)
     memoire_tete = (memoire_tete - 1 + memoire_size) % memoire_size;
     memoire_x[memoire_tete] = x_offset;
     memoire_y[memoire_tete] = y_offset;
-    step++;
+
 
     //  1. collision check first
-    if (dir != 0 && step> memoire_size){
+    if (dir != 0 && step > tail_length){
 
       int active_tail;
       if(tail_length > Max_cercle) active_tail = Max_cercle;
       else active_tail = tail_length;
 
-      for (int i = 0; i < active_tail; i++){
+      for (int i = 0; i < active_tail && i < step ; i++){
         if (abs(x_offset - tail_pos_x[i]) <= 18 && abs(y_offset - tail_pos_y[i]) <= 18){
-          lvglLock();
           reset_game();
-          lvglUnlock();
           break;
         }
       }
@@ -252,7 +258,7 @@ void myTask(void *pvParameters)
       lvglLock();
       lv_obj_align(cercle, LV_ALIGN_CENTER, x_offset, y_offset);
 
-      for (int i = 0; i < Max_cercle; i++){
+      for (int i = 3; i < Max_cercle; i++){
         int spacing = 6 - (i/4);
         if (spacing < 3) spacing = 3;
         memoire_index += spacing;
@@ -335,8 +341,13 @@ void reset_game(){
   step = 0;
 
   for(int i = 0; i < memoire_size; i++){
-    memoire_x[i] = 0;
-    memoire_y[i] = 0;
+    memoire_x[i] = 9999;
+    memoire_y[i] = 9999;
+  }
+
+  for(int i = 0; i < Max_cercle; i++){
+    tail_pos_x[i] = 9999;
+    tail_pos_y[i] = 9999;
   }
 
   target_pos();
