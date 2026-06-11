@@ -51,19 +51,29 @@ int random_pos(int min_val, int max_val, int grid_size)
   return val * grid_size;
 }
 
-static void event_handler(lv_event_t *e) {}
-
 static lv_obj_t *cercle;
 static lv_obj_t *tail_cercle[Max_cercle];
 static lv_obj_t *target;
 static lv_obj_t *score_label;
+static lv_obj_t * menu;
+
+
+static void event_handler(lv_event_t *e) {
+lv_event_code_t code = lv_event_get_code(e);
+if(code == LV_EVENT_CLICKED) {
+  if (menu!= NULL) {
+    lv_obj_add_flag(menu, LV_OBJ_FLAG_HIDDEN);
+    } 
+  }
+}
+
  
 void testLvgl()
 {
   lv_obj_t *screen = lv_screen_active();
   lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
  // lv_obj_set_style_bg_color(screen, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
- 
+
   int32_t width = lv_display_get_horizontal_resolution(NULL);
   int32_t height = lv_display_get_vertical_resolution(NULL);
 
@@ -141,6 +151,28 @@ void testLvgl()
   lv_obj_set_style_text_color(score_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
   lv_obj_align(score_label, LV_ALIGN_TOP_RIGHT, -10, 10);
   score_update();
+
+  menu = lv_obj_create(screen);
+  lv_obj_set_size(menu, width, height);
+  lv_obj_clear_flag(target, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_add_style(menu, &bg_style, 0);
+  lv_obj_center(menu);
+
+  lv_obj_t * title = lv_label_create(menu);
+  lv_label_set_text(title, "SNAKE GAME");
+  lv_obj_set_style_text_color(title, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
+  lv_obj_align(title, LV_ALIGN_CENTER, 0, -40);
+
+  lv_obj_t * start_btn = lv_btn_create(menu);
+  lv_obj_align(start_btn, LV_ALIGN_CENTER, 0, 30);
+  lv_obj_set_size(start_btn, 120, 50);  
+  lv_obj_add_event_cb(start_btn, event_handler, LV_EVENT_ALL, NULL);
+
+  lv_obj_t * start_label = lv_label_create(start_btn);
+  lv_label_set_text(start_label, "START");
+  lv_obj_set_style_text_color(start_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);  
+  lv_obj_center(start_label);
+  
 }
 
 #ifdef ARDUINO
@@ -250,6 +282,8 @@ void myTask(void *pvParameters)
       }
     }
 
+    if (lv_obj_has_flag(menu, LV_OBJ_FLAG_HIDDEN))
+    {
     if (x_offset < x_offset_2)
       x_offset += vit;
     if (x_offset > x_offset_2)
@@ -258,6 +292,7 @@ void myTask(void *pvParameters)
       y_offset += vit;
     if (y_offset > y_offset_2)
       y_offset -= vit;
+    }
 
     memoire_tete = (memoire_tete - 1 + memoire_size) % memoire_size;
     memoire_x[memoire_tete] = x_offset;
@@ -450,6 +485,12 @@ void reset_game()
   }
   lvglUnlock();
   score_update();
+
+  if(menu != NULL) {
+    lvglLock();
+    lv_obj_clear_flag(menu, LV_OBJ_FLAG_HIDDEN);
+    lvglUnlock();
+  }
 }
 
 void score_update()
