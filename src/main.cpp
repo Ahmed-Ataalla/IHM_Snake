@@ -307,7 +307,7 @@ void myTask(void *pvParameters)
       // Start checking loop at segment 4 to avoid head colliding with its neck
       for (int i = 0; i < active_tail; i++)
       {
-        int spacing = 6 - (i / 4);
+        int spacing = ((grid / 10) - (i / 4));
         if (spacing < 3)
           spacing = 3;
         memoire_index += spacing;
@@ -372,7 +372,7 @@ void myTask(void *pvParameters)
       // Changed starting element to 0 so early segments are visual updated properly
       for (int i = 0; i < Max_cercle; i++)
       {
-        int spacing = 6 - (i / 4);
+        int spacing = ((grid / 10) - (i / 4));
         if (spacing < 3)
           spacing = 3;
         memoire_index += spacing;
@@ -432,7 +432,7 @@ void target_pos()
 
     for (int i = 0; i < active_tail; i++)
     {
-      int spacing = 6 - (i / 4);
+      int spacing = ((grid / 10) - (i / 4));
       if (spacing < 3)
         spacing = 3;
       memoire_index += spacing;
