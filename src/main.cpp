@@ -1,6 +1,7 @@
 #include "lvgl.h"
 #include "cstdio"
 #include "cstdlib"
+#include "../lv_version.h"
 
 #define UP 2
 #define Down 3
@@ -56,12 +57,33 @@ static lv_obj_t *cercle;
 static lv_obj_t *tail_cercle[Max_cercle];
 static lv_obj_t *target;
 static lv_obj_t *score_label;
-
+ 
 void testLvgl()
 {
   lv_obj_t *screen = lv_screen_active();
   lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(screen, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
+ // lv_obj_set_style_bg_color(screen, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
+ 
+  int32_t width = lv_display_get_horizontal_resolution(NULL);
+  int32_t height = lv_display_get_vertical_resolution(NULL);
+
+  static lv_style_t bg_style;
+  lv_style_init(&bg_style);
+  lv_style_set_radius(&bg_style, 0);
+  lv_style_set_border_width(&bg_style, 0);
+  lv_style_set_pad_all(&bg_style, 0);
+
+  lv_style_set_bg_color(&bg_style, lv_color_hex(0x9b1842));
+  lv_style_set_bg_grad_color(&bg_style, lv_color_hex(0x000000));
+  lv_style_set_bg_grad_dir(&bg_style, LV_GRAD_DIR_VER);
+  
+  lv_obj_t * bg_panel = lv_obj_create(screen);
+  lv_obj_clear_flag(bg_panel, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_add_style(bg_panel, &bg_style, 0);
+  lv_obj_set_size(bg_panel, width, height);
+  lv_obj_center(bg_panel);
+
+  lv_obj_move_background(bg_panel);
 
   cercle = lv_obj_create(screen);
   lv_obj_clear_flag(cercle, LV_OBJ_FLAG_SCROLLABLE);
@@ -116,7 +138,7 @@ void testLvgl()
   lv_obj_align(target, LV_ALIGN_CENTER, 0, 0);
 
   score_label = lv_label_create(screen);
-  lv_obj_set_style_text_color(score_label, lv_color_hex(0x000000), LV_STATE_DEFAULT);
+  lv_obj_set_style_text_color(score_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
   lv_obj_align(score_label, LV_ALIGN_TOP_RIGHT, -10, 10);
   score_update();
 }
