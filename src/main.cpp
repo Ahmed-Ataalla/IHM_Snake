@@ -7,7 +7,7 @@
 #define Down 3
 #define Right 4
 #define Left 5
-#define Max_cercle 50
+#define Max_cercle 999
 
 int tail_length = 3;
 int grid = 40;
@@ -41,15 +41,9 @@ int score = 0;
 void target_pos();
 void reset_game();
 void score_update();
+int random_pos(int min_val, int max_val, int grid_size);
+int recup_memoire_index (int memoire_index);
 
-int random_pos(int min_val, int max_val, int grid_size)
-{
-  int val;
-  min_val = min_val / grid_size;
-  max_val = max_val / grid_size;
-  val = min_val + (rand() % (max_val - min_val + 1));
-  return val * grid_size;
-}
 
 static lv_obj_t *cercle;
 static lv_obj_t *tail_cercle[Max_cercle];
@@ -86,7 +80,6 @@ void testLvgl()
 {
   lv_obj_t *screen = lv_screen_active();
   lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
- // lv_obj_set_style_bg_color(screen, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
 
   int32_t width = lv_display_get_horizontal_resolution(NULL);
   int32_t height = lv_display_get_vertical_resolution(NULL);
@@ -348,13 +341,7 @@ void myTask(void *pvParameters)
       // Start checking loop at segment 4 to avoid head colliding with its neck
       for (int i = 0; i < active_tail; i++)
       {
-        int spacing = ((grid / 10) - (i / 4));
-        if (spacing < 3)
-          spacing = 3;
-        memoire_index += spacing;
-
-        if (memoire_index >= memoire_size)
-          memoire_index = memoire_size - 1;
+        int memoire_index = recup_memoire_index(i);
 
         if (i >= 4)
         {
@@ -373,10 +360,8 @@ void myTask(void *pvParameters)
       }
     }
 
-    // 2. reset flag after collision check
     target_collect = false;
 
-    // 3. target collection
     int diff_x = abs(x_offset - target_x);
     int diff_y = abs(y_offset - target_y);
 
@@ -401,7 +386,6 @@ void myTask(void *pvParameters)
       score_update();
     }
 
-    // 4. Visual Tail Rendering Update
     if (dir != 0)
     {
       int active_tail = (tail_length > Max_cercle) ? Max_cercle : tail_length;
@@ -410,16 +394,10 @@ void myTask(void *pvParameters)
       lvglLock();
       lv_obj_align(cercle, LV_ALIGN_CENTER, x_offset, y_offset);
 
-      // Changed starting element to 0 so early segments are visual updated properly
       for (int i = 0; i < Max_cercle; i++)
       {
-        int spacing = ((grid / 10) - (i / 4));
-        if (spacing < 3)
-          spacing = 3;
-        memoire_index += spacing;
 
-        if (memoire_index >= memoire_size)
-          memoire_index = memoire_size - 1;
+        int memoire_index = recup_memoire_index(i);
 
         if (i < active_tail)
         {
@@ -451,6 +429,17 @@ void myTask(void *pvParameters)
   }
 }
 
+
+int random_pos(int min_val, int max_val, int grid_size)
+{
+  int val;
+  min_val = min_val / grid_size;
+  max_val = max_val / grid_size;
+  val = min_val + (rand() % (max_val - min_val + 1));
+  return val * grid_size;
+}
+
+
 void target_pos()
 {
   bool valid_pos = false;
@@ -473,12 +462,8 @@ void target_pos()
 
     for (int i = 0; i < active_tail; i++)
     {
-      int spacing = ((grid / 10) - (i / 4));
-      if (spacing < 3)
-        spacing = 3;
-      memoire_index += spacing;
-      if (memoire_index >= memoire_size)
-        memoire_index = memoire_size - 1;
+
+      int memoire_index = recup_memoire_index(i);
 
       int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
       int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
@@ -549,6 +534,21 @@ void score_update()
     lv_label_set_text_fmt(score_label, "%d",score);
     lvglUnlock();
   }
+}
+
+int recup_memoire_index (int memoire_index){
+
+  int index = 0;
+  for (int i = 0; i <= memoire_index; i++)
+  {
+    int spacing = ((grid / 10) - (i / 4));
+    if (spacing < 3)
+      spacing = 3;
+    index += spacing;
+    if (index >= memoire_size)
+      index = memoire_size - 1;
+  }
+  return index;
 }
 
 #else
