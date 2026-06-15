@@ -56,13 +56,27 @@ static lv_obj_t *tail_cercle[Max_cercle];
 static lv_obj_t *target;
 static lv_obj_t *score_label;
 static lv_obj_t * menu;
+static lv_obj_t * title;
 
+static lv_obj_t * game_over_menu;
+static lv_obj_t * game_over_label;
+static lv_obj_t * game_over_score_label;
+static lv_obj_t * restart_label;
 
-static void event_handler(lv_event_t *e) {
+static void start_event_handler(lv_event_t *e) {
 lv_event_code_t code = lv_event_get_code(e);
 if(code == LV_EVENT_CLICKED) {
   if (menu!= NULL) {
     lv_obj_add_flag(menu, LV_OBJ_FLAG_HIDDEN);
+    } 
+  }
+}
+
+static void restart_event_handler(lv_event_t *e) {
+lv_event_code_t code = lv_event_get_code(e);
+if(code == LV_EVENT_CLICKED) {
+  if (game_over_menu!= NULL) {
+    lv_obj_add_flag(game_over_menu, LV_OBJ_FLAG_HIDDEN);
     } 
   }
 }
@@ -158,7 +172,7 @@ void testLvgl()
   lv_obj_add_style(menu, &bg_style, 0);
   lv_obj_center(menu);
 
-  lv_obj_t * title = lv_label_create(menu);
+  title = lv_label_create(menu);
   lv_label_set_text(title, "SNAKE GAME");
   lv_obj_set_style_text_color(title, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
   lv_obj_align(title, LV_ALIGN_CENTER, 0, -40);
@@ -166,13 +180,40 @@ void testLvgl()
   lv_obj_t * start_btn = lv_btn_create(menu);
   lv_obj_align(start_btn, LV_ALIGN_CENTER, 0, 30);
   lv_obj_set_size(start_btn, 120, 50);  
-  lv_obj_add_event_cb(start_btn, event_handler, LV_EVENT_ALL, NULL);
+  lv_obj_add_event_cb(start_btn, start_event_handler, LV_EVENT_ALL, NULL);
 
   lv_obj_t * start_label = lv_label_create(start_btn);
   lv_label_set_text(start_label, "START");
   lv_obj_set_style_text_color(start_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);  
   lv_obj_center(start_label);
-  
+
+
+  game_over_menu = lv_obj_create(screen);
+  lv_obj_set_size(game_over_menu, width, height);
+  lv_obj_clear_flag(target, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_add_style(game_over_menu, &bg_style, 0);
+  lv_obj_center(game_over_menu);
+  lv_obj_add_flag(game_over_menu, LV_OBJ_FLAG_HIDDEN);
+
+  game_over_label = lv_label_create(game_over_menu);
+  lv_label_set_text(game_over_label, "GAME OVER");
+  lv_obj_set_style_text_color(game_over_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
+  lv_obj_align(game_over_label, LV_ALIGN_CENTER, 0, -50);
+
+  game_over_score_label = lv_label_create(game_over_menu);
+  lv_label_set_text_fmt(game_over_score_label, "SCORE: %d", 0);
+  lv_obj_set_style_text_color(game_over_score_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
+  lv_obj_align(game_over_score_label, LV_ALIGN_CENTER, 0, -15);
+
+  lv_obj_t * restart_btn = lv_btn_create(game_over_menu);
+  lv_obj_align(restart_btn, LV_ALIGN_CENTER, 0, 40);
+  lv_obj_set_size(restart_btn, 140, 50);
+  lv_obj_add_event_cb(restart_btn, restart_event_handler, LV_EVENT_ALL, NULL);
+
+  restart_label = lv_label_create(restart_btn);
+  lv_label_set_text(restart_label, "RESTART");
+  lv_obj_set_style_text_color(restart_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
+  lv_obj_center(restart_label);
 }
 
 #ifdef ARDUINO
@@ -282,7 +323,7 @@ void myTask(void *pvParameters)
       }
     }
 
-    if (lv_obj_has_flag(menu, LV_OBJ_FLAG_HIDDEN))
+    if (lv_obj_has_flag(menu, LV_OBJ_FLAG_HIDDEN) && lv_obj_has_flag(game_over_menu, LV_OBJ_FLAG_HIDDEN))
     {
     if (x_offset < x_offset_2)
       x_offset += vit;
@@ -456,6 +497,13 @@ void target_pos()
 
 void reset_game()
 {
+
+  if (game_over_score_label != NULL && game_over_menu != NULL) {
+    lvglLock();
+    lv_label_set_text_fmt(game_over_score_label,"SCORE: %d", score);
+    lv_obj_clear_flag(game_over_menu, LV_OBJ_FLAG_HIDDEN);
+    lvglUnlock();
+  }
   x_offset = 0;
   y_offset = 0;
   x_offset_2 = 0;
