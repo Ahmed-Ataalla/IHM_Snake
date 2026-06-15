@@ -7,7 +7,7 @@
 #define Down 3
 #define Right 4
 #define Left 5
-#define Max_cercle 999
+#define Max_cercle 99
 
 int tail_length = 3;
 int grid = 40;
