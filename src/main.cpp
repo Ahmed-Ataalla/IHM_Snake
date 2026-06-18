@@ -57,6 +57,7 @@ static lv_obj_t * game_over_label;
 static lv_obj_t * game_over_score_label;
 static lv_obj_t * restart_label;
 
+//callback button start
 static void start_event_handler(lv_event_t *e) {
 lv_event_code_t code = lv_event_get_code(e);
 if(code == LV_EVENT_CLICKED) {
@@ -66,6 +67,7 @@ if(code == LV_EVENT_CLICKED) {
   }
 }
 
+//callback button restart
 static void restart_event_handler(lv_event_t *e) {
 lv_event_code_t code = lv_event_get_code(e);
 if(code == LV_EVENT_CLICKED) {
@@ -75,7 +77,7 @@ if(code == LV_EVENT_CLICKED) {
   }
 }
 
- 
+//Init de l'affichage, des styles et des objets graphiques
 void testLvgl()
 {
   lv_obj_t *screen = lv_screen_active();
@@ -84,6 +86,7 @@ void testLvgl()
   int32_t width = lv_display_get_horizontal_resolution(NULL);
   int32_t height = lv_display_get_vertical_resolution(NULL);
 
+  //style de fond dégradé
   static lv_style_t bg_style;
   lv_style_init(&bg_style);
   lv_style_set_radius(&bg_style, 0);
@@ -102,6 +105,7 @@ void testLvgl()
 
   lv_obj_move_background(bg_panel);
 
+  //création de la tête du serpant
   cercle = lv_obj_create(screen);
   lv_obj_clear_flag(cercle, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cercle, 40, 40);
@@ -112,6 +116,7 @@ void testLvgl()
   lv_obj_set_style_pad_all(cercle, 0, LV_STATE_DEFAULT);
   lv_obj_align(cercle, LV_ALIGN_CENTER, 0, 0);
 
+  //generation des segments de la queue
   for (int i = 0; i < Max_cercle; i++)
   {
     tail_cercle[i] = lv_obj_create(screen);
@@ -144,6 +149,7 @@ void testLvgl()
     lv_obj_align(tail_cercle[i], LV_ALIGN_CENTER, 0, 0);
   }
 
+  //création de la pomme 
   target = lv_obj_create(screen);
   lv_obj_clear_flag(target, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(target, 20, 20);
@@ -154,11 +160,13 @@ void testLvgl()
   lv_obj_set_style_pad_all(target, 0, LV_STATE_DEFAULT);
   lv_obj_align(target, LV_ALIGN_CENTER, 0, 0);
 
+  //texte du score
   score_label = lv_label_create(screen);
   lv_obj_set_style_text_color(score_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
   lv_obj_align(score_label, LV_ALIGN_TOP_RIGHT, -10, 10);
   score_update();
 
+  //popup du menu principal
   menu = lv_obj_create(screen);
   lv_obj_set_size(menu, width, height);
   lv_obj_clear_flag(target, LV_OBJ_FLAG_SCROLLABLE);
@@ -170,6 +178,7 @@ void testLvgl()
   lv_obj_set_style_text_color(title, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
   lv_obj_align(title, LV_ALIGN_CENTER, 0, -40);
 
+  //button start
   lv_obj_t * start_btn = lv_btn_create(menu);
   lv_obj_align(start_btn, LV_ALIGN_CENTER, 0, 30);
   lv_obj_set_size(start_btn, 120, 50);  
@@ -180,7 +189,7 @@ void testLvgl()
   lv_obj_set_style_text_color(start_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);  
   lv_obj_center(start_label);
 
-
+  //popup menu game over
   game_over_menu = lv_obj_create(screen);
   lv_obj_set_size(game_over_menu, width, height);
   lv_obj_clear_flag(target, LV_OBJ_FLAG_SCROLLABLE);
@@ -198,6 +207,7 @@ void testLvgl()
   lv_obj_set_style_text_color(game_over_score_label, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
   lv_obj_align(game_over_score_label, LV_ALIGN_CENTER, 0, -15);
 
+  //button game over
   lv_obj_t * restart_btn = lv_btn_create(game_over_menu);
   lv_obj_align(restart_btn, LV_ALIGN_CENTER, 0, 40);
   lv_obj_set_size(restart_btn, 140, 50);
@@ -233,6 +243,7 @@ void myTask(void *pvParameters)
 
   target_pos();
 
+  //cacher les position des sigmants de la queue
   lvglLock();
   lv_obj_align(target, LV_ALIGN_CENTER, target_x, target_y);
   for (int i = 0; i < Max_cercle; i++)
@@ -241,6 +252,7 @@ void myTask(void *pvParameters)
   }
   lvglUnlock();
 
+  //remplissages des  varibables de mémoire avec des valeurs hors-champ
   for (int i = 0; i < memoire_size; i++)
   {
     memoire_x[i] = 9999;
@@ -251,11 +263,13 @@ void myTask(void *pvParameters)
   {
     lv_timer_handler();
 
+    //lecture des buttons de direction
     int button_mask = ((!digitalRead(UP)) << 0) |
                       ((!digitalRead(Down)) << 1) |
                       ((!digitalRead(Right)) << 2) |
                       ((!digitalRead(Left)) << 3);
 
+    // filtrage de direction
     switch (button_mask)
     {
     case 1:
@@ -278,6 +292,7 @@ void myTask(void *pvParameters)
       break;
     }
 
+    // déplacement sur la grille et télééportation aux bordurs de l'écran
     if (abs(x_offset - x_offset_2) < vit && abs(y_offset - y_offset_2) < vit)
     {
       x_offset = x_offset_2;
@@ -316,6 +331,7 @@ void myTask(void *pvParameters)
       }
     }
 
+    //transition fluide de mouvement si li n'y a pas de menu
     if (lv_obj_has_flag(menu, LV_OBJ_FLAG_HIDDEN) && lv_obj_has_flag(game_over_menu, LV_OBJ_FLAG_HIDDEN))
     {
     if (x_offset < x_offset_2)
@@ -328,17 +344,17 @@ void myTask(void *pvParameters)
       y_offset -= vit;
     }
 
+    //enregistrement de la position de la tête
     memoire_tete = (memoire_tete - 1 + memoire_size) % memoire_size;
     memoire_x[memoire_tete] = x_offset;
     memoire_y[memoire_tete] = y_offset;
 
-    // 1. Fixed Tail Collision Checking (Uses History Tracking Structure)
+    //analyse des collisions de la tête contre les segments de la queue
     if (dir != 0 && step > 2)
     {
       int active_tail = (tail_length > Max_cercle) ? Max_cercle : tail_length;
       int memoire_index = 0;
 
-      // Start checking loop at segment 4 to avoid head colliding with its neck
       for (int i = 0; i < active_tail; i++)
       {
         int memoire_index = recup_memoire_index(i);
@@ -360,6 +376,7 @@ void myTask(void *pvParameters)
       }
     }
 
+    //analyse de la recuperation de la pomme, incrémentation du score et le rajout d'un segment
     target_collect = false;
 
     int diff_x = abs(x_offset - target_x);
@@ -386,6 +403,7 @@ void myTask(void *pvParameters)
       score_update();
     }
 
+    //actualisation de l'alignement de tous les segments 
     if (dir != 0)
     {
       int active_tail = (tail_length > Max_cercle) ? Max_cercle : tail_length;
@@ -403,6 +421,7 @@ void myTask(void *pvParameters)
         {
           int tx = memoire_x[(memoire_tete + memoire_index) % memoire_size];
           int ty = memoire_y[(memoire_tete + memoire_index) % memoire_size];
+
 
           if (x_offset == x_min && tx > 100)
             continue;
@@ -429,7 +448,7 @@ void myTask(void *pvParameters)
   }
 }
 
-
+//calcule de l'apparétion des pomme d'une manière aléatoire sur la grille
 int random_pos(int min_val, int max_val, int grid_size)
 {
   int val;
@@ -439,7 +458,7 @@ int random_pos(int min_val, int max_val, int grid_size)
   return val * grid_size;
 }
 
-
+//détermination de l'empplacement libre de la pomme pour ne pas apparétre sur la tête ni la queue
 void target_pos()
 {
   bool valid_pos = false;
@@ -480,6 +499,7 @@ void target_pos()
   }
 }
 
+//réinitialisation du jue en basculant vers le menu game over
 void reset_game()
 {
 
@@ -526,6 +546,7 @@ void reset_game()
   }
 }
 
+//mettre à joure la valure du score
 void score_update()
 {
   if (score_label != NULL)
@@ -536,6 +557,7 @@ void score_update()
   }
 }
 
+//calcule de l'espacement entre chaque segment
 int recup_memoire_index (int memoire_index){
 
   int index = 0;
